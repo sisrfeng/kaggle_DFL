@@ -1,0 +1,72 @@
+======================
+Temporal Action Localization
+    The similar task is called Temporal Action Localization,
+        you can find datasets and SOTAs here:
+https://paperswithcode.com/task/action-recognition.
+
+And I recommend a promising method:  ActionFormer:
+Localizing Moments of Actions with Transformers.
+(https://github.com/happyharrycn/actionformer_release)
+
+
+======================
+i3d model
+
+
+
+
+to classify raw video data,
+in the experiment
+feeding whole frame and
+feeding individual bounding box of players
+has been tested.
+
+
+Model that input the whole frame perform better than
+model that use individual bounding boxes 
+and it's not too far behind the model that
+use ground truth ¿trajectory¿.
+
+
+
+
+Given current SOTA model has a sizeable lead than
+a 4 years old i3d model
+it is reasonable to believe there are room for improvement in the competition.
+
+
+===========
+to train a model we will classify short clips with low FPS.
+At test time we would take this trained model and
+apply it on different clips and average the predictions.
+
+
+
+
+===========
+slow fusion
+
+
+The problem with the Early Fusion approach it
+is that it may be too aggressive in the way that we pool or
+aggregate the temporal information because
+we are "destroying" all the temporal information after one convolution layer and
+one convolution layer would not be enough to model all temporal interactions that happen in a video sequence.
+We want a mechanism that does not fuse early or
+late but rather slowly along temporal information.
+
+
+We can use a 3D CNN where in each layer we can maintain 4D tensors.
+In each layer of the CNN we will use 3-dimensional convolutions and
+poolings that will allow us to fuse information slowly over the course of many layers of processing.
+
+
+
+
+
+
+
+fuse temporal and  spacial dimensions
+either by
+    concatenating or  pooling 
+    embeddings or  frames along the CNN architecture.

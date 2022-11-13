@@ -1,0 +1,48 @@
+分支名            description                                                        model   Val AP  LB
+
+main              tito's baseline    +TTA                                            b5_ap   N/A 0.255 
+                    https://www.kaggle.com/code/assign/dfl-tito-tta/notebook  唯一改动:
+                    ✗labels = model(input)✗ 
+                    labels = model(input) + model(input.flip(-1))   
+
+----------------------------------------------------------------------------------------------------------------------
+
+new_input
+                  Use 3 neighboring frames  with time_stride=1                       b5_ap  0.312   0.425
+                  960x540 input and inference  once every 2 frames  (without tta)    b5_ap  0.554   0.563
+                  Custom data loader                                                 b5_ap  0.625   0.634
+                  Custom data augmentation                                           b5_ap  0.700   0.703
+                  Mixup augmentation                                                 b0_ap(3-fold)  0.747   0.761
+
+----------------------------------------------------------------------------------------------------------------------
+
+label_and_loss          
+
+                  Fix label error                                                    b5_ap  0.242   0.283
+                                https://www.kaggle.com/code/kmizunoster/dfl-benchmark-inference-tta-fix-label-error  
+                         The original code performs a ¿time-based¿ increment in the innermost loop,
+                         but my modification is to perform a ¿frame¿-based increment.
+
+
+                  4-class bce loss                                                   b5_ap  0.609   0.618  
+
+----------------------------------------------------------------------------------------------------------------------
+          
+ensemble
+                  改代码容易, 但等的时间长?
+
+                  Replace b5 model  with b0 model and  predict with 4-fold ensemble  b0_ap(4-fold)  0.669   0.720
+                  1280x720 input and  3-fold ensemble prediction                     b0_ap(3-fold)  0.722   0.772
+                  Replace 1   b0 model  with b1 model                                b0_ap(2-fold)  b1_ap(1-fold)   0.751   0.768
+                  Replace 3 models  with 3 full-fit models
+                 (each model uses  3 neighboring frames  with time_stride=1, 2, and 3,  respectively)
+                                                                                     b0_ap  (full-fit,  time_stride=1, 2, 3) 0.753   0.782  
+
+----------------------------------------------------------------------------------------------------------------------
+
+test_time
+                  Generate predictions for frames not inferred  using linear interpolation    b0_ap  (4-fold) 0.686   0.740
+
+
+
+

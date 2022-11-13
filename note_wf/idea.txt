@@ -1,0 +1,15 @@
+1. 2d to 3d
+2. football detection
+3. motion
+4. feature fusion  ->  classify (transformer)
+    训练数据large enough? 
+    50 x 10 x 25 x 60     750k
+
+5. try  
+
+
+
+class imbalance:
+play 600
+challenge 120
+throwin 30 
