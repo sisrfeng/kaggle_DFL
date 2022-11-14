@@ -91,7 +91,7 @@ parser = argparse.ArgumentParser()
 if 'arg':
     # Keep this argument outside of the dataset group
     # because it is positional.
-    parser.add_argument('data_dir', metavar='DIR')
+    parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
 
     if 'Dataset parameters':
         group = parser.add_argument_group('Dataset parameters')
@@ -319,12 +319,15 @@ if 'arg':
                             help='how many training processes to use (default: 4)')
         group.add_argument('--save-images', action='store_true', default=False,
                             help='save images of input bathes every log interval for debugging')
-        group.add_argument('--amp', action='store_true', default=False,
-                            help='use NVIDIA Apex AMP or Native AMP for mixed precision training')
+
+        group.add_argument('--amp', action='store_true', default=True,
+                           help='use mixed precision training, 有Native AMP就用它, 没有就用NVIDIA Apex AMP')
+
         group.add_argument('--apex-amp', action='store_true', default=False,
-                            help='Use NVIDIA Apex AMP mixed precision')
+                            help='指定用Use NVIDIA Apex AMP' )
         group.add_argument('--native-amp', action='store_true', default=False,
-                            help='Use Native Torch AMP mixed precision')
+                            help='指定用Use Native Torch AMP' )
+
         group.add_argument('--no-ddp-bb', action='store_true', default=False,
                             help='Force broadcast buffers for native DDP to off.')
         group.add_argument('--pin-mem', action='store_true', default=False,
@@ -364,6 +367,8 @@ def _parse_args():
 
 
 def main():
+    import pudb
+    pu.db
     utils.setup_default_logging()
     args, args_text = _parse_args()
 
@@ -371,9 +376,9 @@ def main():
     args.distributed = False
     if 'WORLD_SIZE' in os.environ:
         args.distributed = int(os.environ['WORLD_SIZE']) > 1
-    args.device = 'cuda:0'
+    args.device     = 'cuda:0'
     args.world_size = 1
-    args.rank = 0  # global rank
+    args.rank       = 0  # global rank
     if args.distributed:
         if 'LOCAL_RANK' in os.environ:
             args.local_rank = int(os.getenv('LOCAL_RANK'))
@@ -385,7 +390,7 @@ def main():
         _logger.info('Training in distributed mode with multiple processes, 1 GPU per process. Process %d, total %d.'
                      % (args.rank, args.world_size))
     else:
-        _logger.info('Training with a single process on 1 GPUs.')
+        _logger.info('单GPU, 且单process')
     assert args.rank >= 0
 
     if args.rank == 0 and args.log_wandb:
@@ -395,31 +400,34 @@ def main():
             _logger.warning("You've requested to log metrics to wandb but package not found. "
                             "Metrics not being logged to wandb, try `pip install wandb`")
 
-    # resolve AMP arguments based on PyTorch/Apex availability
-    use_amp = None
-    if args.amp:
-        # `--amp` chooses native amp before apex (APEX ver not actively maintained)
-        if has_native_amp:
-            args.native_amp = True
-        elif has_apex:
-            args.apex_amp = True
-    if args.apex_amp and has_apex:
-        use_amp = 'apex'
-    elif args.native_amp and has_native_amp:
-        use_amp = 'native'
-    elif args.apex_amp or args.native_amp:
-        _logger.warning("Neither APEX or native Torch AMP is available, using float32. "
-                        "Install NVIDA apex or upgrade to PyTorch 1.6")
+    if 'resolve AMP arguments based on PyTorch/Apex availability':
+        use_amp = None
+        if args.amp:
+            # `--amp` chooses native amp before apex (APEX ver: not actively maintained)
+            if has_native_amp:
+                args.native_amp = True
+            elif has_apex:
+                args.apex_amp = True
+
+        if args.apex_amp and has_apex:
+            use_amp = 'apex'
+        elif args.native_amp and has_native_amp:
+            use_amp = 'native'
+        elif args.apex_amp or args.native_amp:
+            _logger.warning("APEX 或 native Torch AMP 都没有, using float32. "
+                            "Install NVIDA apex or upgrade to PyTorch 1.6")
 
     utils.random_seed(args.seed, args.rank)
 
     if args.fuser:
         utils.set_jit_fuser(args.fuser)
+
     if args.fast_norm:
         set_fast_norm()
 
     model = create_model(args.model,
-                         pretrained        = args.pretrained         ,
+                         pretrained        = 1                       ,
+                         # pretrained        = args.pretrained         ,  为了用DAP来debug, 只好强行改内部代码
                          num_classes       = args.num_classes        ,
                          drop_rate         = args.drop               ,
                          drop_path_rate    = args.drop_path          ,
@@ -442,12 +450,16 @@ def main():
     if args.local_rank == 0:  # 没用分布式训练?
         _logger.info(  f'Model {safe_model_name(args.model)} created, param count:{sum([m.numel() for m in model.parameters()])}')
 
-    data_config = resolve_data_config(vars(args), model=model, verbose=args.local_rank == 0)
+    data_config = resolve_data_config(vars(args)                     ,
+                                      model   = model                ,
+                                      verbose = args.local_rank == 0 ,
+                                     )
 
-    # setup augmentation batch splits for contrastive loss or split bn
+    # setup augmentation batch splits for
+    # contrastive loss or split bn
     num_aug_splits = 0
     if args.aug_splits > 0:
-        assert args.aug_splits > 1, 'A split of 1 makes no sense'
+        assert args.aug_splits > 1, 'A split of 1, makes no sense'
         num_aug_splits = args.aug_splits
 
     # enable split bn (separate bn stats per batch-portion)
@@ -660,10 +672,10 @@ def main():
 
     # setup checkpoint saver and eval metric tracking
     which_metric = args.which_metric
-    best_metric = None
-    best_epoch = None
-    saver = None
-    output_dir = None
+    best_metric  = None
+    best_epoch   = None
+    saver        = None
+    output_dir   = None
     if args.rank == 0:
         if args.experiment:
             exp_name = args.experiment
@@ -710,6 +722,8 @@ def main():
                                             model_ema    = model_ema    ,
                                             mixup_fn     = mixup_fn     ,
                                            )
+            import pudb
+            pu.db
 
             if args.distributed and  \
               args.dist_bn in ('broadcast', 'reduce'):
@@ -732,12 +746,13 @@ def main():
                                         args.world_size,
                                         args.dist_bn == 'reduce',
                                        )
-                eval_metrics = validate(model_ema.module,
-                                        loader_eval,
-                                        validate_loss_fn,
-                                        args,
-                                        amp_autocast=amp_autocast,
-                                        log_suffix=' (EMA)',
+
+                eval_metrics = validate(model_ema.module          ,
+                                        loader_eval               ,
+                                        validate_loss_fn          ,
+                                        args                      ,
+                                        amp_autocast=amp_autocast ,
+                                        log_suffix=' (EMA)'       ,
                                        )
 
             if lr_scheduler is not None:
