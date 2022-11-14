@@ -40,8 +40,7 @@ if 1:
     import sys
     from timm import utils
     from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
-    from timm.loss import JsdCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy, \
-                            LabelSmoothingCrossEntropy
+    from timm.loss import JsdCrossEntropy, LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
     from timm.models import create_model, safe_model_name, resume_checkpoint, load_checkpoint, \
                             convert_splitbn_model, convert_sync_batchnorm, model_parameters, set_fast_norm
     from timm.optim import create_optimizer_v2, optimizer_kwargs
@@ -239,10 +238,11 @@ if 'arg':
 
     group.add_argument('--jsd-loss', action='store_true', default=False,
                         help='Enable Jensen-Shannon Divergence + CE loss. Use with `--aug-splits`.')
+
     group.add_argument('--bce-loss', action='store_true', default=False,
                         help='Enable BCE loss w/ Mixup/CutMix use.')
     group.add_argument('--bce-target-thresh', type=float, default=None,
-                        help='Threshold for binarizing softened BCE targets (default: None, disabled)')
+                                help='Threshold for binarizing softened BCE targets (default: None, disabled)')
 
     group.add_argument('--reprob', type=float, default=0., metavar='PCT',
                         help='Random erase prob (default: 0.)')
@@ -483,7 +483,8 @@ def main():
 
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
 
-    # setup automatic mixed-precision (AMP) loss scaling and op casting
+    # setup automatic mixed-precision (AMP)
+    # loss scaling and op casting
     amp_autocast = suppress  # do nothing
     loss_scaler = None
     if use_amp == 'apex':
@@ -561,10 +562,12 @@ def main():
         download=args.dataset_download,
         batch_size=args.batch_size)
 
-    # setup mixup / cutmix
+    # setup mixup or cutmix
     collate_fn = None
     mixup_fn = None
-    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
+    mixup_active = args.mixup > 0 or  \
+                   args.cutmix > 0. or  \
+                   args.cutmix_minmax is not None
     if mixup_active:
         mixup_args = dict(
             mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
@@ -629,26 +632,29 @@ def main():
         pin_memory=args.pin_mem,
     )
 
-    # setup loss function
-    import pudb; pu.db
-    if args.jsd_loss:
-        assert num_aug_splits > 1  # JSD only valid with aug splits set
-        train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing)
-    elif mixup_active:
-        # smoothing is handled with mixup target transform which outputs sparse, soft targets
-        if args.bce_loss:
-            train_loss_fn = BinaryCrossEntropy(target_threshold=args.bce_target_thresh)
+    if 'setup loss function':
+        # import pudb; pu.db
+        if args.jsd_loss:
+            assert num_aug_splits > 1  # JSD only valid with aug splits set
+            train_loss_fn = JsdCrossEntropy(num_splits=num_aug_splits, smoothing=args.smoothing)
+
+        elif mixup_active:
+            # smoothing is handled with
+            # mixup target transform which outputs sparse, soft targets
+            if args.bce_loss:
+                train_loss_fn = BinaryCrossEntropy(target_threshold=args.bce_target_thresh)
+            else:
+                train_loss_fn = SoftTargetCrossEntropy()
+
+        elif args.smoothing:
+            if args.bce_loss:
+                train_loss_fn = BinaryCrossEntropy(target_threshold=args.bce_target_thresh, smoothing=args.smoothing)
+            else:
+                train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
         else:
-            train_loss_fn = SoftTargetCrossEntropy()
-    elif args.smoothing:
-        if args.bce_loss:
-            train_loss_fn = BinaryCrossEntropy(smoothing=args.smoothing, target_threshold=args.bce_target_thresh)
-        else:
-            train_loss_fn = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    else:
-        train_loss_fn = nn.CrossEntropyLoss()
-    train_loss_fn = train_loss_fn.cuda()
-    validate_loss_fn = nn.CrossEntropyLoss().cuda()
+            train_loss_fn = nn.CrossEntropyLoss()
+        train_loss_fn = train_loss_fn.cuda()
+        validate_loss_fn = nn.CrossEntropyLoss().cuda()
 
     # setup checkpoint saver and eval metric tracking
     which_metric = args.which_metric

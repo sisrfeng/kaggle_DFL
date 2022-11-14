@@ -34,7 +34,7 @@ drop_connect: null
 drop_path: null
 epoch_repeats: 0.0
 epochs: 100
-experiment: ../../working/exp_metric_loss
+experiment: ../../working/use_bce_loss
 fast_norm: false
 fuser: ''
 gp: null
