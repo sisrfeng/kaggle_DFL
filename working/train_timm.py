@@ -37,6 +37,8 @@ if 1:
     import yaml
     from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
+    from noteBook import export_ap_score
+
     import sys
     sys.path.insert(1, '../input/upload-wf')
 
@@ -91,7 +93,9 @@ parser = argparse.ArgumentParser()
 if 'arg':
     # Keep this argument outside of the dataset group
     # because it is positional.
-    parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
+    parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train__debug')
+    # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
+    # parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
 
     if 'Dataset parameters':
         group = parser.add_argument_group('Dataset parameters')
@@ -107,21 +111,21 @@ if 'arg':
 
     if 'Model parameters':
         group = parser.add_argument_group('Model parameters')
-        group.add_argument('--model', default='resnet50', metavar='MODEL',
+        group.add_argument('--model', default='tf_efficientnet_b5_ap', metavar='MODEL',
                             help='Name of model to train (default: "resnet50"')
 
         group.add_argument('--pretrained', action='store_true', default=False,
                             help='Start with pretrained version of specified network (if avail)')
 
-        group.add_argument('--initial-checkpoint', default='', metavar='PATH',
-                            help='Initialize model from this checkpoint (default: none)')
+        group.add_argument('--initial-checkpoint', default='./exp_metric_loss/checkpoint-11.pth.tar', metavar='PATH',
+                           help='Initialize model from this checkpoint (default: none), 会覆盖上面的--pretrained?')
 
         group.add_argument('--resume', default="", metavar='PATH',
                             help='Resume full model and optimizer state from checkpoint (default: none)')
 
         group.add_argument('--no-resume-opt', action='store_true', default=False,
                             help='prevent resume of optimizer state when resuming model')
-        group.add_argument('--num-classes', type=int, default=None, metavar='N',
+        group.add_argument('--num-classes', type=int, default=4, metavar='N',
                             help='number of label classes (Model default if None)')
         group.add_argument('--gp', default=None, metavar='POOL',
                             help='Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None.')
@@ -137,10 +141,12 @@ if 'arg':
                             help='Override std deviation of dataset')
         group.add_argument('--interpolation', default='',
                             help='Image resize interpolation type (overrides model)')
-        group.add_argument('-b', '--batch-size', type=int, default=128, metavar='N',
-                            help='Input batch size for training (default: 128)')
+
+        group.add_argument('-b', '--batch-size', type=int, default=4, metavar='N',
+                            help='Input batch size for training (default: 128), 我改成了4')
         group.add_argument('-vb', '--validation-batch-size', type=int, default=None, metavar='N',
                             help='Validation batch size override (default: None)')
+
         group.add_argument('--channels-last', action='store_true', default=False,
                             help='Use channels_last memory layout')
         scripting_group = group.add_mutually_exclusive_group()
@@ -198,7 +204,7 @@ if 'arg':
                             help='warmup learning rate (default: 0.0001)')
         group.add_argument('--min-lr', type=float, default=1e-6, metavar='LR',
                             help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
-        group.add_argument('--epochs', type=int, default=300, metavar='N',
+        group.add_argument('--epochs', type=int, default=100, metavar='N',
                             help='number of epochs to train (default: 300)')
         group.add_argument('--epoch-repeats', type=float, default=0., metavar='N',
                             help='epoch repeat multiplier (number of times to repeat dataset epoch per train epoch).')
@@ -309,7 +315,7 @@ if 'arg':
                             help='random seed (default: 42)')
         group.add_argument('--worker-seeding', default='all',
                             help='worker seed mode (default: all)')
-        group.add_argument('--log-interval', type=int, default=50, metavar='N',
+        group.add_argument('--log-interval', type=int, default=5000, metavar='N',
                             help='how many batches to wait before logging training status')
         group.add_argument('--recovery-interval', type=int, default=0, metavar='N',
                             help='how many batches to wait before writing recovery checkpoint')
@@ -334,11 +340,11 @@ if 'arg':
                             help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
         group.add_argument('--no-prefetcher', action='store_true', default=False,
                             help='disable fast prefetcher')
-        group.add_argument('--output', default='', metavar='PATH',
+        group.add_argument('--output', default='./', metavar='PATH',
                             help='path to output folder (default: none, current dir)')
-        group.add_argument('--experiment', default='',
+        group.add_argument('--experiment', default='use_bce_loss__val_on_eventAP',
                             help='name of train experiment, name of sub-folder for output')
-        group.add_argument('--which-metric', default='top1',
+        group.add_argument('--which-metric', default='loss',
                             help='Best metric (default: "top1"')
         group.add_argument('--tta', type=int, default=0, metavar='N',
                             help='Test/inference time augmentation (oversampling) factor. 0=None (default: 0)')
@@ -367,8 +373,8 @@ def _parse_args():
 
 
 def main():
-    import pudb
-    pu.db
+    # import pudb
+    # pu.db
     utils.setup_default_logging()
     args, args_text = _parse_args()
 
@@ -498,7 +504,7 @@ def main():
     optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
 
     # setup automatic mixed-precision (AMP)
-    # loss scaling and op casting
+    #    loss scaling and op casting
     amp_autocast = suppress  # do nothing
     loss_scaler = None
     if use_amp == 'apex':
@@ -564,21 +570,28 @@ def main():
         _logger.info('Scheduled epochs: {}'.format(num_epochs))
 
     # create the train and eval datasets
-    dataset_train = create_dataset(
-        args.dataset, root=args.data_dir, split=args.train_split, is_training=True,
-        class_map=args.class_map,
-        download=args.dataset_download,
-        batch_size=args.batch_size,
-        repeats=args.epoch_repeats)
-    dataset_eval = create_dataset(
-        args.dataset, root=args.data_dir, split=args.val_split, is_training=False,
-        class_map=args.class_map,
-        download=args.dataset_download,
-        batch_size=args.batch_size)
+    dataset_train = create_dataset(args.dataset,
+                                   root        = args.data_dir         ,
+                                   split       = args.train_split      ,
+                                   is_training = True                  ,
+                                   class_map   = args.class_map        ,
+                                   download    = args.dataset_download ,
+                                   batch_size  = args.batch_size       ,
+                                   repeats     = args.epoch_repeats    ,
+                                  )
+
+    dataset_eval = create_dataset(args.dataset,
+                                  root        = args.data_dir         ,
+                                  split       = args.val_split        ,
+                                  is_training = False                 ,
+                                  class_map   = args.class_map        ,
+                                  download    = args.dataset_download ,
+                                  batch_size  = args.batch_size       ,
+                                 )
 
     # setup mixup or cutmix
     collate_fn = None
-    mixup_fn = None
+    mixup_fn   = None
     mixup_active = args.mixup > 0 or  \
                    args.cutmix > 0. or  \
                    args.cutmix_minmax is not None
@@ -601,49 +614,50 @@ def main():
     train_interpolation = args.train_interpolation
     if args.no_aug or not train_interpolation:
         train_interpolation = data_config['interpolation']
+
     loader_train = create_loader(
-        dataset_train,
-        input_size=data_config['input_size'],
-        batch_size=args.batch_size,
-        is_training=True,
-        use_prefetcher=args.prefetcher,
-        no_aug=args.no_aug,
-        re_prob=args.reprob,
-        re_mode=args.remode,
-        re_count=args.recount,
-        re_split=args.resplit,
-        scale=args.scale,
-        ratio=args.ratio,
-        hflip=args.hflip,
-        vflip=args.vflip,
-        color_jitter=args.color_jitter,
-        auto_augment=args.aa,
-        num_aug_repeats=args.aug_repeats,
-        num_aug_splits=num_aug_splits,
-        interpolation=train_interpolation,
-        mean=data_config['mean'],
-        std=data_config['std'],
-        num_workers=args.workers,
-        distributed=args.distributed,
-        collate_fn=collate_fn,
-        pin_memory=args.pin_mem,
-        use_multi_epochs_loader=args.use_multi_epochs_loader,
-        worker_seeding=args.worker_seeding,
+        dataset_train                                          ,
+        input_size              = data_config['input_size']    ,
+        batch_size              = args.batch_size              ,
+        is_training             = True                         ,
+        use_prefetcher          = args.prefetcher              ,
+        no_aug                  = args.no_aug                  ,
+        re_prob                 = args.reprob                  ,
+        re_mode                 = args.remode                  ,
+        re_count                = args.recount                 ,
+        re_split                = args.resplit                 ,
+        scale                   = args.scale                   ,
+        ratio                   = args.ratio                   ,
+        hflip                   = args.hflip                   ,
+        vflip                   = args.vflip                   ,
+        color_jitter            = args.color_jitter            ,
+        auto_augment            = args.aa                      ,
+        num_aug_repeats         = args.aug_repeats             ,
+        num_aug_splits          = num_aug_splits               ,
+        interpolation           = train_interpolation          ,
+        mean                    = data_config['mean']          ,
+        std                     = data_config['std']           ,
+        num_workers             = args.workers                 ,
+        distributed             = args.distributed             ,
+        collate_fn              = collate_fn                   ,
+        pin_memory              = args.pin_mem                 ,
+        use_multi_epochs_loader = args.use_multi_epochs_loader ,
+        worker_seeding          = args.worker_seeding          ,
     )
 
     loader_eval = create_loader(
-        dataset_eval,
-        input_size=data_config['input_size'],
-        batch_size=args.validation_batch_size or args.batch_size,
-        is_training=False,
-        use_prefetcher=args.prefetcher,
-        interpolation=data_config['interpolation'],
-        mean=data_config['mean'],
-        std=data_config['std'],
-        num_workers=args.workers,
-        distributed=args.distributed,
-        crop_pct=data_config['crop_pct'],
-        pin_memory=args.pin_mem,
+        dataset_eval                                                   ,
+        input_size     = data_config['input_size']                     ,
+        batch_size     = args.validation_batch_size or args.batch_size ,
+        is_training    = False                                         ,
+        use_prefetcher = args.prefetcher                               ,
+        interpolation  = data_config['interpolation']                  ,
+        mean           = data_config['mean']                           ,
+        std            = data_config['std']                            ,
+        num_workers    = args.workers                                  ,
+        distributed    = args.distributed                              ,
+        crop_pct       = data_config['crop_pct']                       ,
+        pin_memory     = args.pin_mem                                  ,
     )
 
     if 'setup loss function':
@@ -655,6 +669,7 @@ def main():
         elif mixup_active:
             # smoothing is handled with
             # mixup target transform which outputs sparse, soft targets
+            args.bce_loss = 1  # 我强制指定
             if args.bce_loss:
                 train_loss_fn = BinaryCrossEntropy(target_threshold=args.bce_target_thresh)
             else:
@@ -722,8 +737,8 @@ def main():
                                             model_ema    = model_ema    ,
                                             mixup_fn     = mixup_fn     ,
                                            )
-            import pudb
-            pu.db
+            # import pudb
+            # pu.db
 
             if args.distributed and  \
               args.dist_bn in ('broadcast', 'reduce'):
@@ -955,7 +970,6 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
                 acc1 = utils.reduce_tensor(acc1, args.world_size)
-                acc5 = utils.reduce_tensor(acc5, args.world_size)
             else:
                 reduced_loss = loss.data
 
@@ -963,9 +977,9 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
             losses_m.update(reduced_loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
-
             batch_time_m.update(time.time() - end)
             end = time.time()
+
             if args.local_rank == 0 and (last_batch or batch_idx % args.log_interval == 0):
                 log_name = 'Test' + log_suffix
                 # _logger.info(
@@ -984,9 +998,12 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
                     f'Acc:  {top1_m.val:>7.2f}'
                )
 
+        #
+        event_AP =  export_ap_score()
 
     metrics = OrderedDict([('loss', losses_m.avg),
                            ('top1', top1_m.avg),
+                           ('event_AP', event_AP),
                           ]
                          )
 

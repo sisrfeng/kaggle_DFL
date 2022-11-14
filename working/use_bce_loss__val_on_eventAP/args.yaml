@@ -19,7 +19,7 @@ cooldown_epochs: 10
 crop_pct: null
 cutmix: 0.0
 cutmix_minmax: null
-data_dir: ../work/imgs4train
+data_dir: ../work/imgs4train__debug
 dataset: ''
 dataset_download: false
 decay_epochs: 100
@@ -41,7 +41,7 @@ gp: null
 grad_checkpointing: false
 hflip: 0.5
 img_size: null
-initial_checkpoint: ''
+initial_checkpoint: ./exp_metric_loss/checkpoint-11.pth.tar
 input_size: null
 interpolation: ''
 jsd_loss: false

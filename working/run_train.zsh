@@ -1,4 +1,5 @@
-python train_timm.py  ../work/imgs4train     \
+# b train_timm.py  ../work/imgs4train     \
+b train_timm.py     \
     --amp                                  \
     --pretrained                           \
     --num-classes   4                      \
