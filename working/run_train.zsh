@@ -1,5 +1,4 @@
-cd ../input/upload-wf     ;  \
-python train_timm.py  ../../work/imgs4train     \
+python train_timm.py  ../work/imgs4train     \
     --amp                                  \
     --pretrained                           \
     --num-classes   4                      \
@@ -10,8 +9,12 @@ python train_timm.py  ../../work/imgs4train     \
     --batch-size    4                      \
     --which-metric  loss                   \
     --bce-loss                              \
-    --experiment    ../../working/use_bce_loss
-    # --initial-checkpoint ./wf_try/checkpoint-19.pth.tar
+    --experiment    use_bce_loss__val_on_eventAP
+
+
+# cd ../input/upload-wf     ;  \
+# python train_timm.py  ../../work/imgs4train     \
+    # --experiment    ../../working/use_bce_loss
     #
 # --which-metric  loss                   \
     # Acc@N doesn't mean much, as you mentioned.

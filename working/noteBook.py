@@ -218,8 +218,6 @@ if 'get 2 npy, {SPLIT}_feat2048有1.5G':
             feat2048 = np.concatenate(feat2048, axis=0)
             # 对于test:  feat2048.shape: (24000, 4)   (3000 x 8, 8 是batch_size?)
 
-            import pudb
-            pu.db
             return feat2048, loader.dataset.filenames(basename=True)
 
 
@@ -271,7 +269,7 @@ if '汇总网络输出的多个npy':
     probS_all_vdo = np.concatenate(probS_all_vdo, axis=0)
 
 
-def submit(probS__all_vdo, nameS__vdo_img, roll_win, nms_len_halfS = [16, 35, 16]):
+def submit(probS__all_vdo, nameS__vdo_img, roll_win = 2, nms_len_halfS = [16, 35, 16]):
     fps       = 25
 
     class2id = {"play":0, "throwin":1, "challenge":2}
@@ -572,7 +570,8 @@ if  '修改自https://www.kaggle.com/code/ryanholbrook/competition-metric-dfl-ev
         return mean_ap
 
 
-if '搜 后处理参数':
+if __name__ == '__main__':
+# if '搜 后处理参数':
     from loguru import logger
     log_file =  './my.log'
     os.system('mv -f {}  {}_bk'.format(log_file, log_file))
@@ -624,3 +623,11 @@ if '搜 后处理参数':
     logger.info(f'{top_paraS= }')
 
 
+def export_ap_score():
+    out_df = submit(probS_all_vdo, nameS__vdo_img)
+
+    ap_score = event_ap( gt[   gt['video_id'].isin( out_df['video_id'].unique() ) ] ,
+                        out_df                                                     ,
+                        events2tol                                                      ,
+                        )
+    return ap_score

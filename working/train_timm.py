@@ -38,6 +38,8 @@ if 1:
     from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
     import sys
+    sys.path.insert(1, '../input/upload-wf')
+
     from timm import utils
     from timm.data import create_dataset, create_loader, resolve_data_config, Mixup, FastCollateMixup, AugMixDataset
     from timm.loss import JsdCrossEntropy, LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy

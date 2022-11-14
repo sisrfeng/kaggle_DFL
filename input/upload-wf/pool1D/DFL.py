@@ -95,8 +95,8 @@ class Clip_of_gameS(Dataset):
 
 
     def __getitem__(self, index):
-        import pudb
-        pu.db
+        # import pudb
+        # pu.db
         feat_npy    = np.load(f'../../../working/{self.SPLIT}_feat2048.npy')
         fNames_infer = np.load(f'../../../working/{self.SPLIT}_nameS__vdo_img.npy')
 
