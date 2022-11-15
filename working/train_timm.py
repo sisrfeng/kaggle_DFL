@@ -93,8 +93,8 @@ parser = argparse.ArgumentParser()
 if 'arg':
     # Keep this argument outside of the dataset group
     # because it is positional.
-    parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train__debug')
-    # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
+    # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train__debug')
+    parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
     # parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
 
     if 'Dataset parameters':
@@ -1001,9 +1001,9 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
         #
         event_AP =  export_ap_score()
 
-    metrics = OrderedDict([('loss', losses_m.avg),
-                           ('top1', top1_m.avg),
-                           ('event_AP', event_AP),
+    metrics = OrderedDict([('loss'     ,losses_m.avg) ,
+                           ('top1'     ,top1_m.avg)   ,
+                           ('event_AP' ,event_AP) ,
                           ]
                          )
 
