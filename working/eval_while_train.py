@@ -20,17 +20,10 @@ def export_ap_score():
         import pandas as pd
 
         import sys
-        # ✗sys.path.append('../input/upload-wf')✗
-        # ✗用pip装的✗
         sys.path.insert(1, '../input/upload-wf')
 
         from timm.models import create_model, apply_test_time_pool
         from timm.data   import ImageDataset, create_loader, resolve_data_config
-
-
-
-    IMG_SIZE = (456 , 456)
-
 
     P_data   = '../input/dfl-bundesliga-data-shootout'
 
@@ -40,29 +33,8 @@ def export_ap_score():
     else:
         P_vdo = [f'{P_data}/train/3c993bd2_0.mp4',
                 f'{P_data}/train/3c993bd2_1.mp4']
-        P_img = '../work/Val_imgs'
-        # P_img = '../work/train_imgs'
+        P_img = '../work/Val_imgs'  #
 
-    if need_vdo2img:
-        def vdo2img(video_path, out_dir):
-            # print(video_path)
-            video_name = os.path.basename(video_path).split('.')[0]
-            cap        = cv2.VideoCapture(video_path)
-            frm_id = 1
-            while True:
-                ok, img = cap.read()
-                if not ok:
-                    break
-                outfile = f'{out_dir}/{video_name}-{frm_id:06}.jpg'
-                img = cv2.resize(img, dsize=IMG_SIZE)
-                cv2.imwrite(outfile, img)
-                #print(outfile)
-                frm_id += 1
-
-        if not os.path.exists(P_img):
-            os.system(  'mkdir -p ' + P_img )
-            for video_path in P_vdo:
-                vdo2img(video_path, P_img)
 
     if 'get 2 npy, {SPLIT}_feat2048有1.5G':
         if os.path.isfile(f'./{SPLIT}_feat2048.npy') and \
@@ -152,8 +124,7 @@ def export_ap_score():
                 Args.pretrained =   Args.pretrained     or  \
                                     not Args.checkpoint
 
-                # create model
-                # 用train_timm里的
+                # 用train_timm里的, (2者似乎一样)
                 # model = create_model(Args.model,
 
 
@@ -175,24 +146,6 @@ def export_ap_score():
                 else:
                     model = model.cuda()
 
-                loader = create_loader(
-                    ImageDataset(Args.data),
-                    use_prefetcher = True                    ,
-                    batch_size     = Args.batch_size         ,
-                    num_workers    = Args.workers            ,
-                    # 上面几个 不需要经过resolve_data_config来wrap
-                    input_size     = loader_cfg['input_size']    ,
-                    interpolation  = loader_cfg['interpolation'] ,
-                    mean           = loader_cfg['mean']          ,
-                    std            = loader_cfg['std']           ,
-                    crop_pct       = loader_cfg['crop_pct'] \
-                                        if not test_time_pool_01  \
-                                        else \
-                                    1.0  # efficientNet默认的cropt_pct是0.93左右
-                    )
-                if loader_cfg['input_size'][-1] > 456:
-                    # print(f'{loader_cfg["input_size"]= }')
-                    pass
 
                 model.eval()
 
