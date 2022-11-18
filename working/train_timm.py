@@ -23,6 +23,8 @@ ImageNet Training Script
     Hacked together by / Copyright 2020 Ross Wightman (https://github.com/rwightman)
 """
 if 1:
+    from ap_score import export_ap_score
+    import numpy as np
     import argparse
     import logging
     import os
@@ -36,8 +38,6 @@ if 1:
     import torchvision.utils
     import yaml
     from torch.nn.parallel import DistributedDataParallel as NativeDDP
-
-    from noteBook import export_ap_score
 
     import sys
     sys.path.insert(1, '../input/upload-wf')
@@ -146,14 +146,13 @@ if 'arg':
                             help='Input batch size for training (default: 128), 我改成了4')
         group.add_argument('-vb', '--validation_batch_size', type=int, default=None, metavar='N',
                             help='Validation batch size override (default: None)')
-
         group.add_argument('--channels_last', action='store_true', default=False,
                             help='Use channels_last memory layout')
         scripting_group = group.add_mutually_exclusive_group()
         scripting_group.add_argument('--torchscript', dest='torchscript', action='store_true',
                             help='torch.jit.script the full model')
         scripting_group.add_argument('--aot_autograd', default=False, action='store_true',
-                            help="Enable AOT Autograd support. (It's recommended to use this option with `--fuser nvfuser` together)")
+                                help="Enable AOT Autograd support. (It's recommended to use this option with `--fuser nvfuser` together)")
         group.add_argument('--fuser', default='',
                             help="Select jit fuser. One of ('', 'te', 'old', 'nvfuser')")
         group.add_argument('--fast_norm', default=False, action='store_true',
@@ -161,24 +160,24 @@ if 'arg':
         group.add_argument('--grad_checkpointing', action='store_true', default=False,
                             help='Enable gradient checkpointing through model blocks/stages')
 
-    # Optimizer parameters
     group = parser.add_argument_group('Optimizer parameters')
-    group.add_argument('--opt', default='sgd', metavar='OPTIMIZER',
-                        help='Optimizer (default: "sgd"')
-    group.add_argument('--opt_eps', default=None, type=float, metavar='EPSILON',
-                        help='Optimizer Epsilon (default: None, use opt default)')
-    group.add_argument('--opt_betas', default=None, type=float, nargs='+', metavar='BETA',
-                        help='Optimizer Betas (default: None, use opt default)')
-    group.add_argument('--momentum', type=float, default=0.9, metavar='M',
-                        help='Optimizer momentum (default: 0.9)')
-    group.add_argument('--weight_decay', type=float, default=2e-5,
-                        help='weight decay (default: 2e-5)')
-    group.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
-                        help='Clip gradient norm (default: None, no clipping)')
-    group.add_argument('--clip_mode', default='norm',
-                        help='Gradient clipping mode. One of ("norm", "value", "agc")')
-    group.add_argument('--layer_decay', type=float, default=None,
-                        help='layer-wise learning rate decay (default: None)')
+    if 1:
+        group.add_argument('--opt', default='sgd', metavar='OPTIMIZER',
+                            help='Optimizer (default: "sgd"')
+        group.add_argument('--opt_eps', default=None, type=float, metavar='EPSILON',
+                            help='Optimizer Epsilon (default: None, use opt default)')
+        group.add_argument('--opt_betas', default=None, type=float, nargs='+', metavar='BETA',
+                            help='Optimizer Betas (default: None, use opt default)')
+        group.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                            help='Optimizer momentum (default: 0.9)')
+        group.add_argument('--weight_decay', type=float, default=2e-5,
+                            help='weight decay (default: 2e-5)')
+        group.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
+                            help='Clip gradient norm (default: None, no clipping)')
+        group.add_argument('--clip_mode', default='norm',
+                            help='Gradient clipping mode. One of ("norm", "value", "agc")')
+        group.add_argument('--layer_decay', type=float, default=None,
+                            help='layer-wise learning rate decay (default: None)')
 
     if  'Learning rate schedule parameters':
         group = parser.add_argument_group('Learning rate schedule parameters')
@@ -945,14 +944,14 @@ def train_one_epoch(epoch,
 
 
 def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix=''):
-    batch_time_m = utils.AverageMeter()
     losses_m     = utils.AverageMeter()
     top1_m       = utils.AverageMeter()
 
     model.eval()
 
-    end = time.time()
+    end      = time.time()
     last_idx = len(loader) - 1
+    probS  = []
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(loader):
             last_batch = batch_idx == last_idx
@@ -976,6 +975,8 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
             loss = loss_fn(output, target)
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
 
+            probS.append(output.cpu().numpy())
+
             if args.distributed:
                 reduced_loss = utils.reduce_tensor(loss.data, args.world_size)
                 acc1 = utils.reduce_tensor(acc1, args.world_size)
@@ -986,37 +987,30 @@ def validate(model, loader, loss_fn, args, amp_autocast=suppress, log_suffix='')
 
             losses_m.update(reduced_loss.item(), input.size(0))
             top1_m.update(acc1.item(), output.size(0))
-            batch_time_m.update(time.time() - end)
             end = time.time()
 
             if args.local_rank == 0 and (last_batch or batch_idx % args.log_interval == 0):
                 log_name = 'Test' + log_suffix
-                # _logger.info(
-                    # '{0}: {1:>4d}/{2}  '
-                    # 'Loss: {loss.val:>7.3f} ({loss.avg:>6.3f})  '
-                    # 'Acc:  {top1.val:>7.2f} ({top1.avg:>7.2f})  '.format(log_name,
-                    #                                                       batch_idx                 ,
-                    #                                                       last_idx                  ,
-                    #                                                       loss       = losses_m     ,
-                    #                                                       top1       = top1_m       ,
-                    #                                                      )
-               # )
                 _logger.info(
                     f'{log_name}: {batch_idx:>4d}/{last_idx}  '
                     f'Loss: {losses_m.val:>6.2f}   '
                     f'Acc:  {top1_m.val:>7.2f}'
-               )
+                )
 
         #
-        event_AP =  export_ap_score()
+    probS         = np.concatenate(probS, axis=0)
+    filenames_val = loader.dataset.filenames(basename=True)
 
-    metrics = OrderedDict([('loss'     ,losses_m.avg) ,
-                           ('top1'     ,top1_m.avg)   ,
-                           ('event_AP' ,event_AP) ,
-                          ]
-                         )
+    event_AP =  export_ap_score(probS, filenames_val)
+
+    metrics = OrderedDict([('loss'  ,losses_m.avg) ,
+                            ('top1'     ,top1_m.avg)   ,
+                            ('event_AP' ,event_AP)     ,
+                            ]
+                            )
 
     return metrics
+
 
 
 if __name__ == '__main__':

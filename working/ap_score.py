@@ -1,4 +1,4 @@
-def export_ap_score(probS, filenames_val)
+def export_ap_score(probS, filenames_val):
     if 'import':
         import sys
         sys.path.append('../work/timm/pytorch-image-models')
@@ -34,9 +34,6 @@ def export_ap_score(probS, filenames_val)
         # It enables benchmark mode in cudnn.
         # benchmark mode is good whenever your input sizes for your network do not vary
         # faster runtime.
-
-
-
 
     # # Extract frames where action is likely to have occurred using the Image Prediction Score.
 
@@ -82,10 +79,10 @@ def export_ap_score(probS, filenames_val)
 
         df = pd.DataFrame(probS,columns=event_names_with_background)
         df['video_name'] = filenames
-        df['video_id'] = df['video_name'].str.split('-').str[0]
-        df['frame_id'] = df['video_name'].str.split('-').str[1].str.split('.').str[0].astype(int)
+        df['video_id'] = df['video_name'].str.split('_').str[0]
+        df['frame_id'] = df['video_name'].str.split('_').str[1].str.split('.').str[0].astype(int)
 
-        train_df = pd.DataFrame()
+        infer_df = pd.DataFrame()
         for video_id,gdf in df.groupby('video_id'):
             for i, event in enumerate(event_names):
                 # Moving averages are used to smooth out the data.
@@ -109,12 +106,12 @@ def export_ap_score(probS, filenames_val)
                                     sort_arr[rank_arr[ex_idx]] = -1
                 this_df = gdf.iloc[idx_list].reset_index(drop=True).reset_index().rename(columns={'index':'rank'})[['rank','video_id','frame_id']]
                 this_df['event'] = event
-                train_df = train_df.append(this_df)
+                infer_df = infer_df.append(this_df)
 
-        train_df['time']  = train_df['frame_id'] / 25
-        train_df['score'] = 1 / (train_df['rank'] + 1)
+        infer_df['time']  = infer_df['frame_id'] / 25
+        infer_df['score'] = 1 / (infer_df['rank'] + 1)
 
-        return train_df
+        return infer_df
 
 
     # copy from https://www.kaggle.com/code/ryanholbrook/competition-metric-dfl-event-detection-ap
@@ -323,9 +320,9 @@ def export_ap_score(probS, filenames_val)
         solution = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv", usecols=['video_id', 'time', 'event'])
 
 
-        train_df = make_sub(probS, filenames_train)
-        score = event_detection_ap(solution[solution['video_id'].isin(train_df['video_id'].unique())],
-                                    train_df[['video_id', 'time', 'event', 'score']],
+        infer_df = make_sub(probS, filenames_val)
+        score = event_detection_ap(solution[solution['video_id'].isin(infer_df['video_id'].unique())],
+                                    infer_df[['video_id', 'time', 'event', 'score']],
                                     tolerances,
                                     )
         print(score) # this score was 0.21558808109342775

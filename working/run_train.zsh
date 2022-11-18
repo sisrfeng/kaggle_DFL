@@ -1,16 +1,17 @@
-# b train_timm.py  ../work/imgs4train     \
-b train_timm.py     \
-    --amp                                  \
-    --pretrained                           \
-    --num-classes   4                      \
-    --model         tf_efficientnet_b5_ap  \
-    --epochs        100                    \
-    --out           ./                     \
-    --log-interval  5000                   \
-    --batch-size    4                      \
-    --which-metric  loss                   \
-    --bce-loss                              \
-    --experiment    use_bce_loss__val_on_eventAP
+                    # ../work/imgs4train     \
+b train_timm.py                                \
+    --amp                                      \
+    --pretrained                               \
+    --num_classes   4                          \
+    --model         tf_efficientnet_b5_ap      \
+    --epochs        100                        \
+    --out           ./                         \
+    --log_interval  5000                       \
+    --batch_size    4                          \
+    --which_metric  event_AP                   \
+    --bce_loss                                 \
+    --data_dir      ../work/imgs4train         \
+    --experiment    use_bce_loss__val_on_eventAP__Nov_18
 
 
 # cd ../input/upload-wf     ;  \
