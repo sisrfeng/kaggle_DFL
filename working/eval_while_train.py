@@ -120,9 +120,6 @@ def export_ap_score():
             def infer(Args):
                 #Args = parser.parse_args()
                 #print(Args)
-                # might as well try to do something useful...
-                Args.pretrained =   Args.pretrained     or  \
-                                    not Args.checkpoint
 
                 # 用train_timm里的, (2者似乎一样)
                 # model = create_model(Args.model,

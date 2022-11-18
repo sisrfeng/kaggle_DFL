@@ -6,6 +6,8 @@ for images in a folder into a csv.
 
 """
 if 'import':
+    import sys
+    sys.path.insert(1, '../input/upload-wf')
     import os
     import time
     import argparse
@@ -27,7 +29,7 @@ if 'args':
                         help='path to dataset')
     parser.add_argument('--output_dir', metavar='DIR', default='./',
                         help='path to output files')
-    parser.add_argument('--model', '-m', metavar='MODEL', default='dpn92',
+    parser.add_argument('--model', '-m', metavar='MODEL', default='tf_efficientnet_b5_ap',
                         help='model architecture (default: dpn92)')
     parser.add_argument('-j', '--workers', default=2, type=int, metavar='N',
                         help='number of data loading workers (default: 2)')
@@ -75,8 +77,6 @@ def main():
                         checkpoint_path = args.checkpoint  ,
                         )
 
-    _logger.info('Model %s created, param count: %d' %
-                (args.model, sum([m.numel() for m in model.parameters()])))
 
     config = resolve_data_config(vars(args), model=model)
     model, test_time_pool = (model, False) if args.no_test_pool else apply_test_time_pool(model, config)
@@ -99,32 +99,24 @@ def main():
 
     model.eval()
 
-    k = min(args.topk, args.num_classes)
+    k          = min(args.topk, args.num_classes)
     batch_time = AverageMeter()
-    end = time.time()
-    topk_ids = []
+    end        = time.time()
+    topk_ids   = []
     with torch.no_grad():
         for batch_idx, (input, _) in enumerate(loader):
+        # 全文重点:
             input  = input.cuda()
             labels = model(input)
             topk   = labels.topk(k)[1]
             topk_ids.append(topk.cpu().numpy())
-
-            # measure elapsed time
-            batch_time.update(time.time() - end)
-            end = time.time()
-
-            if batch_idx % args.log_freq == 0:
-                _logger.info('Predict: [{0}/{1}] Time {batch_time.val:.3f} ({batch_time.avg:.3f})'.format(
-                    batch_idx, len(loader), batch_time=batch_time))
 
     topk_ids = np.concatenate(topk_ids, axis=0)
 
     with open(os.path.join(args.output_dir, './topk_ids.csv'), 'w') as out_file:
         filenames = loader.dataset.filenames(basename=True)
         for filename, label in zip(filenames, topk_ids):
-            out_file.write('{0},{1}\n'.format(
-                filename, ','.join([ str(v) for v in label])))
+            out_file.write( f'{filename},{",".join([ str(v) for v in label ] )}\n')
 
 
 if __name__ == '__main__':
