@@ -1,4 +1,4 @@
-def export_ap_score()
+def export_ap_score(probS, filenames_val)
     if 'import':
         import sys
         sys.path.append('../work/timm/pytorch-image-models')
@@ -35,24 +35,7 @@ def export_ap_score()
         # benchmark mode is good whenever your input sizes for your network do not vary
         # faster runtime.
 
-        def inference(args):
 
-            model.eval()
-
-            probS       = []
-            with torch.no_grad():
-                for batch_idx, (input, _) in enumerate(loader):
-                    output = model(input)
-                    probS.append(output.cpu().numpy())
-                    # inference.py里是:
-                    # topk_ids.append(output.¿topk(k)[1]¿.cpu().numpy())
-
-
-            probS = np.concatenate(probS, axis=0)
-            return probS,  loader.dataset.filenames(basename=True)
-
-
-        probS, filenames_train = inference(args)
 
 
     # # Extract frames where action is likely to have occurred using the Image Prediction Score.
