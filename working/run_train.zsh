@@ -5,12 +5,12 @@ b train_timm.py                                \
     --num_classes   4                          \
     --model         tf_efficientnet_b5_ap      \
     --epochs        100                        \
-    --out           ./                         \
+    --out           ./exp                      \
     --log_interval  5000                       \
     --batch_size    4                          \
     --which_metric  event_AP                   \
     --bce_loss                                 \
-    --data_dir      ../work/imgs4train         \
+    --data_dir      ../work/imgs4train__debug  \
     --experiment    use_bce_loss__val_on_eventAP__Nov_18
 
 

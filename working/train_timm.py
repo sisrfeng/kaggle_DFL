@@ -117,7 +117,7 @@ if 'arg':
         group.add_argument('--pretrained', action='store_true', default=False,
                             help='Start with pretrained version of specified network (if avail)')
 
-        group.add_argument('--initial_checkpoint', default='./exp_metric_loss/checkpoint-11.pth.tar', metavar='PATH',
+        group.add_argument('--initial_checkpoint', default='', metavar='PATH',
                            help='Initialize model from this checkpoint (default: none), 会覆盖上面的--pretrained?')
 
         group.add_argument('--resume', default="", metavar='PATH',

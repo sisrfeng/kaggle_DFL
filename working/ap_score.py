@@ -79,8 +79,8 @@ def export_ap_score(probS, filenames_val):
 
         df = pd.DataFrame(probS,columns=event_names_with_background)
         df['video_name'] = filenames
-        df['video_id'] = df['video_name'].str.split('_').str[0]
-        df['frame_id'] = df['video_name'].str.split('_').str[1].str.split('.').str[0].astype(int)
+        df['video_id'] = df['video_name'].str.split('-').str[0]
+        df['frame_id'] = df['video_name'].str.split('-').str[1].str.split('.').str[0].astype(int)
 
         infer_df = pd.DataFrame()
         for video_id,gdf in df.groupby('video_id'):
@@ -220,21 +220,21 @@ def export_ap_score(probS, filenames_val):
 
 
         def event_detection_ap(
-                solution: pd.DataFrame,
+                labels: pd.DataFrame,
                 submission: pd.DataFrame,
                 tolerances: Dict[str, float],
         ) -> float:
 
-            assert_index_equal(solution.columns, pd.Index(['video_id', 'time', 'event']))
+            assert_index_equal(labels.columns, pd.Index(['video_id', 'time', 'event']))
             assert_index_equal(submission.columns, pd.Index(['video_id', 'time', 'event', 'score']))
 
-            # Ensure solution and submission are sorted properly
-            solution = solution.sort_values(['video_id', 'time'])
+            # Ensure labels and submission are sorted properly
+            labels = labels.sort_values(['video_id', 'time'])
             submission = submission.sort_values(['video_id', 'time'])
 
             # Extract scoring intervals.
             intervals = (
-                solution
+                labels
                 .query("event in ['start', 'end']")
                 .assign(interval=lambda x: x.groupby(['video_id', 'event']).cumcount())
                 .pivot(index='interval', columns=['video_id', 'event'], values='time')
@@ -247,7 +247,7 @@ def export_ap_score(probS, filenames_val):
 
             # Extract ground-truth events.
             ground_truths = (
-                solution
+                labels
                 .query("event not in ['start', 'end']")
                 .reset_index(drop=True)
             )
@@ -317,11 +317,11 @@ def export_ap_score(probS, filenames_val):
 
             return mean_ap
 
-        solution = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv", usecols=['video_id', 'time', 'event'])
 
+        labels = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv", usecols=['video_id', 'time', 'event'])
 
         infer_df = make_sub(probS, filenames_val)
-        score = event_detection_ap(solution[solution['video_id'].isin(infer_df['video_id'].unique())],
+        score = event_detection_ap(labels[labels['video_id'].isin(infer_df['video_id'].unique())],
                                     infer_df[['video_id', 'time', 'event', 'score']],
                                     tolerances,
                                     )
