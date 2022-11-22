@@ -1,17 +1,19 @@
+exp_PATH=use_bce_loss__val_on_eventAP__Nov_22
+t exp/${exp_PATH}
                     # ../work/imgs4train     \
-b train_timm.py                                \
+p train_timm.py                                \
     --amp                                      \
     --pretrained                               \
     --num_classes   4                          \
     --model         tf_efficientnet_b5_ap      \
     --epochs        100                        \
-    --out           ./exp                      \
     --log_interval  5000                       \
     --batch_size    4                          \
     --which_metric  event_AP                   \
     --bce_loss                                 \
     --data_dir      ../work/imgs4train__debug  \
-    --experiment    use_bce_loss__val_on_eventAP__Nov_18
+    --output        ./exp                      \
+    --experiment    $exp_PATH
 
 
 # cd ../input/upload-wf     ;  \

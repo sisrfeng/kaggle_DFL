@@ -34,7 +34,7 @@ drop_connect: null
 drop_path: null
 epoch_repeats: 0.0
 epochs: 100
-experiment: use_bce_loss__val_on_eventAP__Nov_18
+experiment: use_bce_loss__val_on_eventAP__Nov_22
 fast_norm: false
 fuser: ''
 gp: null

@@ -704,7 +704,9 @@ def main():
                 safe_model_name(args.model),
                 str(data_config['input_size'][-1])
             ])
-        output_dir = utils.get_outdir(args.output if args.output else './output/train', exp_name)
+        output_dir = utils.get_outdir(args.output if args.output else './output/train',
+                                      exp_name
+                                     )
         decreasing = True if which_metric == 'loss'  \
                           else  \
                      False
@@ -792,6 +794,7 @@ def main():
 
             if saver is not None:
                 # save proper checkpoint with eval metric
+                print(f'{which_metric=}')
                 best_metric, best_epoch = saver.save_checkpoint(epoch,
                                                                 metric= eval_metrics[which_metric],
                                                                )
@@ -921,10 +924,10 @@ def train_one_epoch(epoch,
 
                 if args.save_images and output_dir:
                     torchvision.utils.save_image(
-                        input,
-                        os.path.join(output_dir, 'train-batch-%d.jpg' % batch_idx),
-                        padding=0,
-                        normalize=True)
+                        input                                                      ,
+                        os.path.join(output_dir, 'train-batch-%d.jpg' % batch_idx) ,
+                        padding   = 0                                              ,
+                        normalize = True)
 
         if saver is not None and  \
         args.recovery_interval and \
