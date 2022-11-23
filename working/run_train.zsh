@@ -1,4 +1,4 @@
-exp_PATH=use_bce_loss__val_on_eventAP__Nov_22
+exp_PATH=use_bce_loss__val_on_eventAP__Nov_23
 t exp/${exp_PATH}
                     # ../work/imgs4train     \
 p train_timm.py                                \
@@ -11,7 +11,7 @@ p train_timm.py                                \
     --batch_size    4                          \
     --which_metric  event_AP                   \
     --bce_loss                                 \
-    --data_dir      ../work/imgs4train__debug  \
+    --data_dir      ../work/imgs4train         \
     --output        ./exp                      \
     --experiment    $exp_PATH
 
