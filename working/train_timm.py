@@ -187,17 +187,17 @@ if 'arg':
                             help='learning rate (default: 0.05)')
         group.add_argument('--lr_noise', type=float, nargs='+', default=None, metavar='pct, pct',
                             help='learning rate noise on/off epoch percentages')
-        group.add_argument('--lr_noise-pct', type=float, default=0.67, metavar='PERCENT',
+        group.add_argument('--lr_noise_pct', type=float, default=0.67, metavar='PERCENT',
                             help='learning rate noise limit percent (default: 0.67)')
-        group.add_argument('--lr_noise-std', type=float, default=1.0, metavar='STDDEV',
+        group.add_argument('--lr_noise_std', type=float, default=1.0, metavar='STDDEV',
                             help='learning rate noise std-dev (default: 1.0)')
-        group.add_argument('--lr_cycle-mul', type=float, default=1.0, metavar='MULT',
+        group.add_argument('--lr_cycle_mul', type=float, default=1.0, metavar='MULT',
                             help='learning rate cycle len multiplier (default: 1.0)')
-        group.add_argument('--lr_cycle-decay', type=float, default=0.5, metavar='MULT',
+        group.add_argument('--lr_cycle_decay', type=float, default=0.5, metavar='MULT',
                             help='amount to decay each learning rate cycle (default: 0.5)')
-        group.add_argument('--lr_cycle-limit', type=int, default=1, metavar='N',
+        group.add_argument('--lr_cycle_limit', type=int, default=1, metavar='N',
                             help='learning rate cycle limit, cycles enabled if > 1')
-        group.add_argument('--lr_k-decay', type=float, default=1.0,
+        group.add_argument('--lr_k_decay', type=float, default=1.0,
                             help='learning rate k-decay for cosine/poly (default: 1.0)')
         group.add_argument('--warmup_lr', type=float, default=0.0001, metavar='LR',
                             help='warmup learning rate (default: 0.0001)')
@@ -248,7 +248,7 @@ if 'arg':
 
     group.add_argument('--bce_loss', action='store_true', default=False,
                         help='Enable BCE loss w/ Mixup/CutMix use.')
-    group.add_argument('--bce_target-thresh', type=float, default=None,
+    group.add_argument('--bce_target_thresh', type=float, default=None,
                                 help='Threshold for binarizing softened BCE targets (default: None, disabled)')
 
     group.add_argument('--reprob', type=float, default=0., metavar='PCT',
@@ -267,11 +267,11 @@ if 'arg':
                         help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
     group.add_argument('--mixup_prob', type=float, default=1.0,
                         help='Probability of performing mixup or cutmix when either/both is enabled')
-    group.add_argument('--mixup_switch-prob', type=float, default=0.5,
+    group.add_argument('--mixup_switch_prob', type=float, default=0.5,
                         help='Probability of switching to cutmix when both mixup and cutmix enabled')
     group.add_argument('--mixup_mode', default='batch',
                         help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
-    group.add_argument('--mixup_off-epoch', default=0, type=int, metavar='N',
+    group.add_argument('--mixup_off_epoch', default=0, type=int, metavar='N',
                         help='Turn off mixup after this epoch, disabled if 0 (default: 0)')
     group.add_argument('--smoothing', type=float, default=0.1,
                         help='Label smoothing (default: 0.1)')
@@ -303,9 +303,9 @@ if 'arg':
     group = parser.add_argument_group('Model exponential moving average parameters')
     group.add_argument('--model_ema', action='store_true', default=False,
                         help='Enable tracking moving average of model weights')
-    group.add_argument('--model_ema-force-cpu', action='store_true', default=False,
+    group.add_argument('--model_ema_force_cpu', action='store_true', default=False,
                         help='Force ema to be tracked on CPU, rank=0 node only. Disables EMA validation.')
-    group.add_argument('--model_ema-decay', type=float, default=0.9998,
+    group.add_argument('--model_ema_decay', type=float, default=0.9998,
                         help='decay factor for model weights moving average (default: 0.9998)')
 
     if 'Misc':
@@ -333,7 +333,7 @@ if 'arg':
         group.add_argument('--native_amp', action='store_true', default=False,
                             help='指定用Use Native Torch AMP' )
 
-        group.add_argument('--no_ddp-bb', action='store_true', default=False,
+        group.add_argument('--no_ddp_bb', action='store_true', default=False,
                             help='Force broadcast buffers for native DDP to off.')
         group.add_argument('--pin_mem', action='store_true', default=False,
                             help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
@@ -348,7 +348,7 @@ if 'arg':
         group.add_argument('--tta', type=int, default=0, metavar='N',
                             help='Test/inference time augmentation (oversampling) factor. 0=None (default: 0)')
         group.add_argument("--local_rank", default=0, type=int)
-        group.add_argument('--use_multi-epochs-loader', action='store_true', default=False,
+        group.add_argument('--use_multi_epochs_loader', action='store_true', default=False,
                             help='use the multi-epochs-loader to save time at the beginning of every epoch')
         group.add_argument('--log_wandb', action='store_true', default=False,
                             help='log training and validation metrics to wandb')
@@ -600,10 +600,15 @@ def main():
                    args.cutmix > 0. or  \
                    args.cutmix_minmax is not None
     if mixup_active:
-        mixup_args = dict(
-            mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-            label_smoothing=args.smoothing, num_classes=args.num_classes)
+        mixup_args = dict(mixup_alpha     = args.mixup             ,
+                          cutmix_alpha    = args.cutmix            ,
+                          cutmix_minmax   = args.cutmix_minmax     ,
+                          prob            = args.mixup_prob        ,
+                          switch_prob     = args.mixup_switch_prob ,
+                          mode            = args.mixup_mode        ,
+                          label_smoothing = args.smoothing         ,
+                          num_classes     = args.num_classes       ,
+                         )
         if args.prefetcher:
             assert not num_aug_splits  # collate conflict (need to support deinterleaving in collate mixup)
             collate_fn = FastCollateMixup(**mixup_args)
@@ -673,7 +678,7 @@ def main():
         elif mixup_active:
             # smoothing is handled with
             # mixup target transform which outputs sparse, soft targets
-            args.bce_loss = 1  # 我强制指定
+            # args.bce_loss = 1  # 我为了用DAP来debug, 强制指定
             if args.bce_loss:
                 train_loss_fn = BinaryCrossEntropy(target_threshold=args.bce_target_thresh)
             else:
