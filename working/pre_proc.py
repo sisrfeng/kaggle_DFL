@@ -115,6 +115,7 @@ def vdo2img(vdo_id, split):
             # out_file = f'{P_img}/{vdo_id}_{frm_id:06}.jpg'  日红把人家的¿-¿改成了¿_¿ ,导致make_sub时出错
             out_file = f'{P_img}/{vdo_id}-{frm_id:06}.jpg'
             cv2.imwrite(out_file, frm)  # 如果图片存在 会重新write?
+            print(f'{out_file= }')
             # print('out_file, row[idx], row[idx+1], this_time:')
             # print(out_file, row[idx], row[idx+1], this_time)
 

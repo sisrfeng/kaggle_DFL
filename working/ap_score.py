@@ -221,16 +221,16 @@ def export_ap_score(probS, filenames_val):
 
         def event_detection_ap(
                 labels: pd.DataFrame,
-                submission: pd.DataFrame,
+                submit: pd.DataFrame,
                 tolerances: Dict[str, float],
         ) -> float:
 
             assert_index_equal(labels.columns, pd.Index(['video_id', 'time', 'event']))
-            assert_index_equal(submission.columns, pd.Index(['video_id', 'time', 'event', 'score']))
+            assert_index_equal(submit.columns, pd.Index(['video_id', 'time', 'event', 'score']))
 
-            # Ensure labels and submission are sorted properly
+            # Ensure labels and submit are sorted properly
             labels = labels.sort_values(['video_id', 'time'])
-            submission = submission.sort_values(['video_id', 'time'])
+            submit = submit.sort_values(['video_id', 'time'])
 
             # Extract scoring intervals.
             intervals = (
@@ -256,7 +256,7 @@ def export_ap_score(probS, filenames_val):
             class_counts = ground_truths.value_counts('event').to_dict()
 
             # Create table for detections with a column indicating a match to a ground-truth event
-            detections = submission.assign(matched = False)
+            detections = submit.assign(matched = False)
 
             # Remove detections outside of scoring intervals
             detections_filtered = []
@@ -321,8 +321,8 @@ def export_ap_score(probS, filenames_val):
         labels = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv", usecols=['video_id', 'time', 'event'])
 
         infer_df = make_sub(probS, filenames_val)
-        score = event_detection_ap(labels[labels['video_id'].isin(infer_df['video_id'].unique())],
-                                    infer_df[['video_id', 'time', 'event', 'score']],
+        score = event_detection_ap(labels[     labels['video_id'].isin(infer_df['video_id'].unique()) ],
+                                    infer_df[  ['video_id', 'time', 'event', 'score']                 ],
                                     tolerances,
                                     )
         print(score) # this score was 0.21558808109342775

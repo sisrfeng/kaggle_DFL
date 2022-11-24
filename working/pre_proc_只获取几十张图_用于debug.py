@@ -65,8 +65,6 @@ def vdo2img(vdo_id, split):
 
     row = df_2P6_a_vdo[ ['time','event'] ].values
     for idx in range( 0, 40 ):
-    # for idx in range( len(row) - 1 ):
-        print(f'{idx= }')
         this_event = row[idx   , 1]
 
         this_time  = row[idx   , 0]
@@ -105,20 +103,16 @@ def vdo2img(vdo_id, split):
                 event_1in4 = 'bg'
 
         P_img = f"../work/imgs4train__debug/{split}/{event_1in4}"
-        # P_img = f"../work/imgs4train/{split}/{event_1in4}"
         if not os.path.exists(P_img):
             os.makedirs( P_img, exist_ok=True )
 
         while this_time < next_time:
-            print(f'{this_time= }')
-            print(f'{next_time= }')
             frm_id = int( this_time * fps )
 
             cap.set( cv2.CAP_PROP_POS_FRAMES, frm_id )
             _ , frm   = cap.read()
-            # out_file = f'{P_img}/{frm_id:06}.jpg'
-            out_file = f'{P_img}/{vdo_id}-{frm_id:06}.jpg'
             # out_file = f'{P_img}/{vdo_id}_{frm_id:06}.jpg'  日红把人家的¿-¿改成了¿_¿ ,导致make_sub时出错
+            out_file = f'{P_img}/{vdo_id}-{frm_id:06}.jpg'
             cv2.imwrite(out_file, frm)  # 如果图片存在 会重新write?
             print(f'{out_file= }')
             # print('out_file, row[idx], row[idx+1], this_time:')

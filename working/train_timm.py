@@ -93,9 +93,8 @@ parser = argparse.ArgumentParser()
 if 'arg':
     # Keep this argument outside of the dataset group
     # because it is positional.
-    # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train__debug')
-    parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
-    # parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
+    parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
+    # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
 
     if 'Dataset parameters':
         group = parser.add_argument_group('Dataset parameters')
