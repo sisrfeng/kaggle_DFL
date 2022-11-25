@@ -1,4 +1,5 @@
 exp_PATH=new_input_size%%mixup%%$(date +"%-d号%H点")
+# asdf
 echo ${exp_PATH}
 # t可以改成rm , 我这里的t是扔进垃圾桶的意思, 避免旧实验干扰
 t exp/${exp_PATH}
