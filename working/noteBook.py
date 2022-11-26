@@ -30,6 +30,11 @@ def export_ap_score():
 
 
     IMG_SIZE = (456 , 456)
+    # Since the efficienet b5's input shape is (456, 456).
+    # Can I directly resize with cv2 to said dimension or will it have an adverse effect on the model overall performance ?
+    # tito:
+        # I think you can directly resize it.
+        # Larger image sizes may give better results
 
 
     P_data   = '../input/dfl-bundesliga-data-shootout'

@@ -2,6 +2,7 @@
 # ----------------------------
 #
 # I found label errors in the baseline code.
+
 # Fixing label errors give me a little boost on my score.
 # Please see the description in loading label data for more information.
 #
@@ -21,11 +22,7 @@ import math  # Added for fixed extract_images function
 # ----------------------------
 # # setting
 
-debug = True
-if debug:
-    epochs = 3
-else:
-    epochs = 20
+debug = False
 
 err_tol = {
     'challenge': [ 0.30, 0.40, 0.50, 0.60, 0.70 ],
@@ -65,89 +62,93 @@ for arr in df.sort_values(['video_id','time','event','event_attributes']).values
 df = pd.concat([df, pd.DataFrame(additional_events, columns=df.columns)])
 df = df[~df['event'].isin(event_names)]
 df = df.sort_values(['video_id', 'time'])
-df
 
-# ----------------------------
+
+
 # ## Major change
-    # I also changed this part from the original code because some output files are duplicated and labeled in different classes.
+    # I also changed this part from the original code
+        # because some output files are duplicated and labeled in different classes.
     # The original code performs a ¿time-based¿ increment in the innermost loop,
     # but my modification is to perform a ¿frame¿-based increment.
     # Examples of problems with the original code are as follows:
 
     #   ・
-    # start (time=239.04976270078544, frame=5976) -> labeled as backgraund
-    #   ・                   -> background
-    # start + time_interval*10 (time=239.44976270078544, frame=5986) -> frame 5986 is labeled as backgraund
-    #   ・                   -> background
-    # start_event1 (time=239.465, frame=5986) -> frame 5986 is also labeled as event1
-    #   ・                   -> event1
+    # start                          (time=239.0, frame=5976)  ->labeled as backgraund
+    #   ・                                                     ->bg
+
+    # start + time_interval*10       (time=239.4, frame=5986)  ->frame 5986 is labeled as backgraund
+    #   ・                                                     ->bg
+    # start_event1                   (time=239.4, frame=5986)  ->frame 5986 is ¿also¿ labeled as event1
+
+    #   ・                                                     ->event1
     # end_event1
-    #   ・                   -> background
-    # start_event2 (time=558.0020000000002, frame=13950) -> labeled as event2
-    #   ・                   -> event2
-    # start_event2 + time_interval*3 (time=558.1220000000002, frame=13953) -> frame 13953 is labeled as event2
-    #   ・                   -> event2
-    # end_event2 (time=558.1520000000003, frame=13953) -> frame 13953 is also labeled as background
-    #   ・                   -> background
+    #   ・                                                     ->bg
+    # start_event2                   (time=558.0, frame=13950) ->labeled as event2
+    #   ・                                                     ->event2
+    # start_event2 + time_interval*3 (time=558.1, frame=13953) ->frame 13953 is labeled as event2
+    #   ・                                                     ->event2
+    # end_event2                     (time=558.1, frame=13953) ->frame 13953 is ¿also¿ labeled as bg
+    #   ・                                                     ->bg
     # end
 
-# ----------------------------
+
 def extract_training_images(args):
-        video_id, split = args
-        video_path = f"../input/dfl-bundesliga-data-shootout/train/{video_id}.mp4"
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            TODO
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        time_interval = 1/fps
+    video_id, split = args
+    video_path = f"../input/dfl-bundesliga-data-shootout/train/{video_id}.mp4"
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        TODO
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    time_interval = 1/fps
 
-        df_video = df[df.video_id == video_id]
-        if debug:
-            df_video = df_video.head(10)
-        print(split, video_id, df_video.shape)
+    df_video = df[df.video_id == video_id]
+    if debug:
+        df_video = df_video.head(10)
+    print(split, video_id, df_video.shape)
 
-        # frame_num_list = []
-        #crr_statu => background, play, challenge, throwin
-        arr = df_video[['time','event']].values
-        for idx in range(len(arr)-1):
-            # ¿Major changes from here¿
-            crr_frame = int(math.ceil(arr[idx,0] * fps))
-            nxt_frame = int(math.ceil(arr[idx+1,0] * fps))
+    # frame_num_list = []
+    #crr_statu => bg, play, challenge, throwin
+    arr = df_video[['time','event']].values
+    for idx in range(len(arr)-1):
+        # ¿Major changes from here¿
+        crr_frame = int(math.ceil(arr[idx,0] * fps))
+        nxt_frame = int(math.ceil(arr[idx+1,0] * fps))
 
-            crr_event = arr[idx,1]
-            #print(crr_time, nxt_time, crr_event)
+        crr_event = arr[idx,1]
+        #print(crr_time, nxt_time, crr_event)
 
-            crr_event = crr_event
-            if crr_event == 'start':
-                crr_status = 'background'
-            elif crr_event == 'end':
-                # should use as background?
-                continue
+        # crr_event = crr_event  为啥作者写这行? 忘记删掉?
+        if crr_event == 'start':
+            crr_status = 'bg'
+        elif crr_event == 'end':
+            # should use as bg?
+            continue
+        else:
+            start_or_end, crr_status = crr_event.split('_', 1)
+            if start_or_end == 'end':
+                crr_status = 'bg'
+
+        result_dir = f"../work/correct_images4train/{split}/{crr_status}"
+        # result_dir = f"../work/split_images/{split}/{crr_status}"
+        if not os.path.exists(result_dir):
+            os.makedirs(result_dir, exist_ok=True)
+
+        this_frame = crr_frame
+        while this_frame < nxt_frame:
+            frame_num = this_frame
+            # assert frame_num not in frame_num_list
+            # frame_num_list.append(frame_num)
+
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
+            ret, frame = cap.read()
+            out_file = f'{result_dir}/{video_id}-{frame_num:06}.jpg'
+            cv2.imwrite(out_file, frame)
+            # print(out_file, arr[idx], arr[idx+1], this_frame)
+
+            if crr_status == 'bg':
+                this_frame += 10
             else:
-                start_or_end, crr_status = crr_event.split('_', 1)
-                if start_or_end == 'end':
-                    crr_status = 'background'
-
-            result_dir = f"../work/split_images/{split}/{crr_status}"
-            if not os.path.exists(result_dir):
-                os.makedirs(result_dir, exist_ok=True)
-
-            this_frame = crr_frame
-            while this_frame < nxt_frame:
-                frame_num = this_frame
-                # assert frame_num not in frame_num_list
-                # frame_num_list.append(frame_num)
-
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
-                ret, frame = cap.read()
-                out_file = f'{result_dir}/{video_id}_{frame_num:06}.jpg'
-                cv2.imwrite(out_file, frame)
-                # print(out_file, arr[idx], arr[idx+1], this_frame)
-
-                if crr_status == 'background':
-                    this_frame += 10
-                else:
-                    this_frame += 1
+                this_frame += 1
 
 # !rm -rf ../work/split_images/
 for split in video_id_split:
@@ -155,23 +156,4 @@ for split in video_id_split:
     for video_id in video_ids:
         extract_training_images([video_id, split])
 print('done')
-
-
-
-# !cd ../work/timm/pytorch-image-models && \
-    # python ./train.py ../../split_images \
-    # -b 10 \
-    # --amp \
-    # --epochs $epochs \
-    # --pretrained \
-    # --num-classes 4 \
-    # --model tf_efficientnet_b5_ap \
-    # --experiment dfl-benchmark-training-fix-extract-images
-
-# ----------------------------
-# 模型融合
-# !cd ../work/timm/pytorch-image-models && \
-    # python ./avg_checkpoints.py --input output/train/dfl-benchmark-training-fix-extract-images \
-    # --output /kaggle/working/tf_efficientnet_b5_ap-456-fix.pt
-
 
