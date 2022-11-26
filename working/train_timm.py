@@ -110,17 +110,13 @@ if 'arg':
 
     if 'Model parameters':
         group = parser.add_argument_group('Model parameters')
-        group.add_argument('--model', default='tf_efficientnet_b5_ap', metavar='MODEL',
-                            help='Name of model to train (default: "resnet50"')
+        group.add_argument('--model', default='tf_efficientnet_b5_ap', metavar='MODEL',  help='Name of model to train (default: "resnet50"')
 
-        group.add_argument('--pretrained', action='store_true', default=False,
-                            help='Start with pretrained version of specified network (if avail)')
-
+        group.add_argument('--pretrained', action='store_true', default=False,  help='Start with pretrained version of specified network (if avail)')
+        # 放着, 好搜:--checkpoint --load_checkpoint
         group.add_argument('--initial_checkpoint', default='', metavar='PATH',
                            help='Initialize model from this checkpoint (default: none), 会覆盖上面的--pretrained?')
-
-        group.add_argument('--resume', default="", metavar='PATH',
-                            help='Resume full model and optimizer state from checkpoint (default: none)')
+        group.add_argument('--resume', default="", metavar='PATH',  help='Resume full model and optimizer state from checkpoint (default: none)')
 
         group.add_argument('--no_resume_opt', action='store_true', default=False,
                             help='prevent resume of optimizer state when resuming model')
