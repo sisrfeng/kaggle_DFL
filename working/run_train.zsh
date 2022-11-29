@@ -1,4 +1,4 @@
-exp_PATH=Correct_label___New_input_size__Mixup__$(date +"%-d号%H点")
+exp_PATH=Correct_label___ori_input_size__Mixup__$(date +"%-d号%H点")
 echo ${exp_PATH}
 # t可以改成rm , 我这里的t是扔进垃圾桶的意思, 避免旧实验干扰
 t exp/${exp_PATH}
@@ -16,10 +16,8 @@ p train_timm.py   ../work/correct_images4train         \
     --batch_size    2                      \
     --which_metric  event_AP               \
     --bce_loss                             \
-    --input_size 3 540 960                 \
     --mixup         0.5                    \
     --output        ./exp                  \
-    --initial_checkpoint         exp/Correct_label___New_input_size__Mixup__26号15点/checkpoint-2.pth.tar  \
     --experiment    $exp_PATH
 
 # tito:
