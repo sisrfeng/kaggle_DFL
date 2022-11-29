@@ -9,3 +9,5 @@ weight-456
 *.npy
 *.pt
 *.tar
+work
+input/dfl-bundesliga-data-shootout
