@@ -1,6 +1,5 @@
-This folder mimics "/kaggle"  in kaggle' s kernel.
-
-(`s` in `s_kaggle` means "slash", 仿照kaggle的kernel里的根目录 ) 
+This folder mimics "/kaggle"  in kaggle' s kernel.   
+(The repo's name was `s_kaggle`, and `s` in `s_kaggle` means "slash" ) 
 
 # Usage
 
