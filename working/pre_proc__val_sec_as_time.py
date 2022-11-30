@@ -20,21 +20,21 @@ splits2vdoIds = {
          '3c993bd2_0',
          '3c993bd2_1',
     ],
-    'train':[
-         '1606b0e6_0',
-         '1606b0e6_1',
-         '35bd9041_0',
-         '35bd9041_1',
-         '407c5a9e_1',
-         '4ffd5986_0',
-         '9a97dae4_1',
-         'cfbe2e94_0',
-         'cfbe2e94_1',
-         'ecf251d4_0',
-    ]
+    # 'train':[
+    #      '1606b0e6_0',
+    #      '1606b0e6_1',
+    #      '35bd9041_0',
+    #      '35bd9041_1',
+    #      '407c5a9e_1',
+    #      '4ffd5986_0',
+    #      '9a97dae4_1',
+    #      'cfbe2e94_0',
+    #      'cfbe2e94_1',
+    #      'ecf251d4_0',
+    # ]
 }
 
-df = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv")
+df = pd.read_csv( "../input/dfl-bundesliga-data-shootout/train.csv" )
 event3x2 = []
 for row in df.sort_values( ['video_id', 'time', 'event', 'event_attributes']).values:
     if row[2] in events2tol:
@@ -97,7 +97,9 @@ def vdo2img(vdo_id, split):
             if start_or_end == 'end':
                 event_1in4 = 'bg'
 
-        P_img = f"../work/imgs4train/{split}/{event_1in4}"
+        P_img = f"../work/imgs4train_frmAStime/{split}/{event_1in4}"
+        # P_img = f"../work/imgs4train/{split}/{event_1in4}"
+
         if not os.path.exists(P_img):
             os.makedirs( P_img, exist_ok=True )
 

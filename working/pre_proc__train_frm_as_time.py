@@ -42,10 +42,10 @@ err_tol = {
     'throwin': [ 0.15, 0.20, 0.25, 0.30, 0.35 ]
 }
 video_id_split = {
-    'val':[
-        '3c993bd2_0',
-        '3c993bd2_1',
-    ],
+    # 'val':[
+    #     '3c993bd2_0',
+    #     '3c993bd2_1',
+    # ],
     'train':[
         '1606b0e6_0',
         '1606b0e6_1',
@@ -140,7 +140,7 @@ def extract_training_images(args):
             if start_or_end == 'end':
                 crr_status = 'bg'
 
-        result_dir = f"../work/correct_images4train/{split}/{crr_status}"
+        result_dir = f"../work/imgs4train_frmAStime/{split}/{crr_status}"
         # result_dir = f"../work/split_images/{split}/{crr_status}"
         if not os.path.exists(result_dir):
             os.makedirs(result_dir, exist_ok=True)

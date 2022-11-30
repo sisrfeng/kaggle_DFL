@@ -4,9 +4,8 @@ echo ${exp_PATH}
 t exp/${exp_PATH}
 
 # p是改成python就行 (我把p设成了python和一些智能化的操作alias)
-# p train_timm.py   ../work/imgs4train__debug  \
 # p train_timm.py   ../work/imgs4train         \
-p train_timm.py   ../work/correct_images4train         \
+p train_timm.py   ../work/imgs4train_frmAStime         \
     --amp                                  \
     --pretrained                           \
     --num_classes   4                      \
