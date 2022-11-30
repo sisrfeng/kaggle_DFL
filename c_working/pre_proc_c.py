@@ -1,4 +1,16 @@
 #  [Training part](https://www.kaggle.com/code/kmizunoster/dfl-benchmark-training-fix-label-error)
+
+# 如果用本文件生成的val目录, 作为训练过程中的验证集 去算eventAP,
+# 会报错, 因为时间取ceil时 有些帧没保存?
+# 可以用../working/pre_proc.py生成的val目录
+    # (此时val/下的4个类别目录, 里面的图片就算从一个目录mv到另外一个, 也不影响eventAP吧?
+    # 4个目录仅仅作为4分类的class label, 但我验证时, 直接用../input/dfl-bundesliga-data-shootout/train.csv)
+
+# imgs4train/val, 不包含整段验证视频
+    # 在label中, 上一个事件的end和下一个事件的start 之间的帧, 算eventAP时被忽略, 不论预测为哪个事件都不影响得分
+    # 在比赛test set上推理时, 没有label, 所以每一帧都要推理,
+    # 但在训练过程中验证时, 有label, 没必要管那些不算分的帧
+
 # ----------------------------
 #
 # I found label errors in the baseline code.

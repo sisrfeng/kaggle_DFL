@@ -38,7 +38,7 @@ df = pd.read_csv("../input/dfl-bundesliga-data-shootout/train.csv")
 event3x2 = []
 for row in df.sort_values( ['video_id', 'time', 'event', 'event_attributes']).values:
     if row[2] in events2tol:
-        tol =   events2tol[ row[2] ][0]   / 2
+        tol =   events2tol[row[2]][0]   / 2
                                   # 改用其他tolerance?
         event3x2.append( [  row[0], row[1]-tol, f'start_{row[2]}', row[3]  ] )
         event3x2.append( [  row[0], row[1]+tol,   f'end_{row[2]}', row[3]  ] )
@@ -46,18 +46,15 @@ df = pd.concat( [df,
                  pd.DataFrame(event3x2, columns=df.columns),
                 ] )
 df_2P6 = df[  ~df['event'].isin( ['challenge', 'throwin', 'play']) ]  # 2 plus 6 classes: start + end   +  2x3 classes
-            # ~ : 取反
+              # ~ : 取反, 仍掉play等, 只要start_play和end_play等
 df_2P6 = df_2P6.sort_values(['video_id', 'time'])
 
 def vdo2img(vdo_id, split):
-    video_path      = f"../input/dfl-bundesliga-data-shootout/train/{vdo_id}.mp4"
-                                                           # 把官方的train划分出train和val
-    # video_path      = f"../input/dfl-bundesliga-data-shootout/{split}/{vdo_id}.mp4"
-    cap             = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture( f"../input/dfl-bundesliga-data-shootout/train/{vdo_id}.mp4")
     if not cap.isOpened():
-        print('错错_______________________________')
+        print('错了...')
 
-    fps           = cap.get(cv2.CAP_PROP_FPS)
+    fps     = cap.get(cv2.CAP_PROP_FPS)
     frm2frm = 1 / fps
 
     df_2P6_a_vdo = df_2P6[ df_2P6.video_id == vdo_id ]
@@ -85,9 +82,6 @@ def vdo2img(vdo_id, split):
             #     event2 + tolerances
             #       ・                   -> bg
             #     end
-                 # ・
-                 # ・
-                 # ・
                  # ・
             #       ・                   -> not used  (should use as bg? 但用上的话 bg就太多了? 类别不平衡?)
             #     start

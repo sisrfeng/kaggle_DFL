@@ -1,4 +1,4 @@
-exp_PATH=Correct_label___ori_input_size__Mixup__$(date +"%-d号%H点")
+exp_PATH=batchSize8__Correct_label___ori_input_size__Mixup__$(date +"%-d号%H点")
 echo ${exp_PATH}
 # t可以改成rm , 我这里的t是扔进垃圾桶的意思, 避免旧实验干扰
 t exp/${exp_PATH}
@@ -13,7 +13,7 @@ p train_timm.py   ../work/correct_images4train         \
     --model         tf_efficientnet_b5_ap  \
     --epochs        100                    \
     --log_interval  5000                   \
-    --batch_size    2                      \
+    --batch_size    8                      \
     --which_metric  event_AP               \
     --bce_loss                             \
     --mixup         0.5                    \

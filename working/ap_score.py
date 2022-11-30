@@ -63,10 +63,10 @@ def export_ap_score(probS, filenames_val):
     }
     event_names = ['challenge', 'throwin', 'play']
     label_dict = {
-        'background':0,
-        'challenge':1,
-        'play':2,
-        'throwin':3,
+        'background' : 0 ,
+        'challenge'  : 1 ,
+        'play'       : 2 ,
+        'throwin'    : 3 ,
     }
     event_names_with_background = ['background','challenge','play','throwin']
 

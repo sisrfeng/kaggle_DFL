@@ -94,6 +94,11 @@ if 'arg':
     # Keep this argument outside of the dataset group
     # because it is positional.
     parser.add_argument('data_dir', metavar='DIR', default='../work/imgs4train')
+        # imgstrain/val, 不包含整段验证视频
+        # 在label中, 上一个事件的end和下一个事件的start 之间的帧, 算eventAP时被忽略, 不论预测为什么都不影响得分
+            # 在比赛test set上推理时, 没有label, 所以每一帧都要推理,
+            # 但在训练过程中验证时, 有label, 没必要管那些不算分的帧
+
     # parser.add_argument('--data_dir', metavar='DIR', default='../work/imgs4train')
 
     if 'Dataset parameters':
@@ -566,7 +571,8 @@ def main():
     if args.local_rank == 0:
         _logger.info('Scheduled epochs: {}'.format(num_epochs))
 
-    # create the train and eval datasets
+    # create_dataset默认处理的是: timm folder (or tar) based ImageDataset
+    # 会调用ImageDataset(1个class)
     dataset_train = create_dataset(args.dataset,
                                    root        = args.data_dir         ,
                                    split       = args.train_split      ,
@@ -577,8 +583,6 @@ def main():
                                    repeats     = args.epoch_repeats    ,
                                   )
 
-    # create_dataset默认 处理timm folder (or tar) based ImageDataset
-    # 会调用ImageDataset这个class
     dataset_eval = create_dataset(args.dataset,
                                   root        = args.data_dir         ,
                                   split       = args.val_split        ,

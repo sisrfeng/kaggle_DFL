@@ -1,3 +1,4 @@
+# lwf改过, 不再是的原版的了, 但应该没有功能上的改变
 import sys
 sys.path.append('../work/timm/pytorch-image-models')
 
@@ -24,7 +25,6 @@ TEST = True # for submission
 
 # # Extract images
 
-
 def extract_images(video_path, out_dir):
     video_name = os.path.basename(video_path).split('.')[0]
     cam = cv2.VideoCapture(video_path)
@@ -35,9 +35,7 @@ def extract_images(video_path, out_dir):
         if not successed:
             break
         outfile = f'{out_dir}/{video_name}-{frame_count:06}.jpg'
-        img = cv2.resize(img,
-                         dsize=IMG_SIZE,
-                        )
+        img = cv2.resize(img, dsize=IMG_SIZE)
         cv2.imwrite(outfile, img)
         frame_count += 1
 
@@ -170,24 +168,6 @@ err_tol = {
     'challenge': [ 0.30, 0.40, 0.50, 0.60, 0.70 ],
     'play': [ 0.15, 0.20, 0.25, 0.30, 0.35 ],
     'throwin': [ 0.15, 0.20, 0.25, 0.30, 0.35 ]
-}
-video_id_split = {
-    'val':[
-         '3c993bd2_0',
-         '3c993bd2_1',
-    ],
-    'train':[
-         '1606b0e6_0',
-         '1606b0e6_1',
-         '35bd9041_0',
-         '35bd9041_1',
-         '407c5a9e_1',
-         '4ffd5986_0',
-         '9a97dae4_1',
-         'cfbe2e94_0',
-         'cfbe2e94_1',
-         'ecf251d4_0',
-    ]
 }
 event_names = ['challenge', 'throwin', 'play']
 label_dict = {

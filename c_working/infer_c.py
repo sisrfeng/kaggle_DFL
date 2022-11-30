@@ -7,26 +7,24 @@
 # !mkdir -p ../work
 import sys
 
-# ----------------------------
 import glob
 import os
-from tqdm.auto import tqdm
 from multiprocessing import Pool, cpu_count
 import cv2
-import time
-import argparse
 import logging
 import numpy as np
 import torch
 
-from timm.models import create_model, apply_test_time_pool
+from tqdm.auto import tqdm
+
 from timm.data import ImageDataset, create_loader, resolve_data_config
+from timm.models import create_model, apply_test_time_pool
 from timm.utils import AverageMeter, setup_default_logging
 
+import time
 # ----------------------------
 # # Extract images
 
-# ----------------------------
 def extract_images(video_path, out_dir):
     video_name = os.path.basename(video_path).split('.')[0]
     cam = cv2.VideoCapture(video_path)
@@ -39,7 +37,6 @@ def extract_images(video_path, out_dir):
         outfile = f'{out_dir}/{video_name}-{frame_count:06}.jpg'
         img = cv2.resize(img, dsize=IMG_SIZE)
         cv2.imwrite(outfile, img)
-        #print(outfile)
         frame_count += 1
 
 IMG_SIZE = (456, 456)
@@ -47,7 +44,9 @@ IMG_SIZE = (456, 456)
 
 OUT_DIR = '../work/Val_imgs'
 IN_DIR = '../input/dfl-bundesliga-data-shootout/train'
-IN_VIDEOS = ['../input/dfl-bundesliga-data-shootout/train/3c993bd2_0.mp4','../input/dfl-bundesliga-data-shootout/train/3c993bd2_1.mp4']
+IN_VIDEOS = ['../input/dfl-bundesliga-data-shootout/train/3c993bd2_0.mp4',
+             '../input/dfl-bundesliga-data-shootout/train/3c993bd2_1.mp4',
+            ]
 
 #
 os.path.makedirs(OUT_DIR, exist_ok=True)
@@ -164,24 +163,6 @@ err_tol = {
     'challenge': [ 0.30, 0.40, 0.50, 0.60, 0.70 ],
     'play': [ 0.15, 0.20, 0.25, 0.30, 0.35 ],
     'throwin': [ 0.15, 0.20, 0.25, 0.30, 0.35 ]
-}
-video_id_split = {
-    'val':[
-        '3c993bd2_0',
-        '3c993bd2_1',
-    ],
-    'train':[
-        '1606b0e6_0',
-        '1606b0e6_1',
-        '35bd9041_0',
-        '35bd9041_1',
-        '407c5a9e_1',
-        '4ffd5986_0',
-        '9a97dae4_1',
-        'cfbe2e94_0',
-        'cfbe2e94_1',
-        'ecf251d4_0',
-    ]
 }
 event_names = ['challenge', 'throwin', 'play']
 label_dict = {
