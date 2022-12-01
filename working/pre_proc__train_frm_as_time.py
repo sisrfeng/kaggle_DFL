@@ -167,5 +167,4 @@ for split in video_id_split:
     video_ids = video_id_split[split]
     for video_id in video_ids:
         extract_training_images([video_id, split])
-print('done')
 
