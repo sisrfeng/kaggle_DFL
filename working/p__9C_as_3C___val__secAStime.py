@@ -61,31 +61,13 @@ def vdo2img(vdo_id, split):
     #  Debug:
     # df_2P6_a_vdo = df_2P6_a_vdo.head(10)
 
+    frmS_set = set()
     row = df_2P6_a_vdo[ ['time','event'] ].values
     for idx in range( len(row) - 1 ):
         this_event = row[idx   , 1]
 
         this_time  = row[idx   , 0]
         next_time  = row[idx+1 , 0]
-        # Label is asigned as follows:
-            #       ・
-            #     start
-            #       ・                   -> bg
-            #     event1 - tolerances
-            #       ・                   -> event1
-            #     event1 + tolerances
-            #       ・                   -> bg
-
-
-            #     event2 - tolerances
-            #       ・                   -> event2
-            #     event2 + tolerances
-            #       ・                   -> bg
-            #     end
-                 # ・
-            #       ・                   -> not used  (should use as bg? 但用上的话 bg就太多了? 类别不平衡?)
-            #     start
-
         if this_event == 'start':
             event_1in4 = 'bg'
         elif this_event == 'end':
@@ -97,7 +79,8 @@ def vdo2img(vdo_id, split):
             if start_or_end == 'end':
                 event_1in4 = 'bg'
 
-        P_img = f"../work/imgs4train_frmAStime/{split}/{event_1in4}"
+        P_img = f"../work/train_val__9frm_as_3frm/{split}/{event_1in4}"
+        # P_img = f"../work/imgs4train_frmAStime/{split}/{event_1in4}"
         # P_img = f"../work/imgs4train/{split}/{event_1in4}"
 
         if not os.path.exists(P_img):
@@ -105,29 +88,45 @@ def vdo2img(vdo_id, split):
 
         while this_time < next_time:
             frm_id = int( this_time * fps )
+            # "fix label error" 的作者加这2行, 验证自己没有label error?
+            # (我把list改为dict, 快?)
+            if  frm_id not in frmS_set:
+                frmS_set.add(frm_id)
+            else:
+                print('重复了:', frm_id)
 
-            cap.set( cv2.CAP_PROP_POS_FRAMES, frm_id )
-            _ , frm   = cap.read()
+            save_n_frmS_as_a_img = 1
+            if save_n_frmS_as_a_img:
+                #获取前中后各一帧
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frm_id-1)
+                _, frm_left = cap.read()
+
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frm_id)
+                _, frm = cap.read()
+
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frm_id+1)
+                _, frm_right = cap.read()
+
+                #
+                frm_left_g    = cv2.cvtColor(frm_left    ,cv2.COLOR_BGR2GRAY)
+                frm_g       = cv2.cvtColor(frm       ,cv2.COLOR_BGR2GRAY)
+                frm_right_g = cv2.cvtColor(frm_right ,cv2.COLOR_BGR2GRAY)
+
+                frm = cv2.merge([ frm_left_g, frm_g, frm_right_g ])
+            else:
+                cap.set( cv2.CAP_PROP_POS_FRAMES, frm_id )
+                ret, frm = cap.read()
+
             # out_file = f'{P_img}/{vdo_id}_{frm_id:06}.jpg'  日红把人家的¿-¿改成了¿_¿ ,导致make_sub时出错
             out_file = f'{P_img}/{vdo_id}-{frm_id:06}.jpg'
             cv2.imwrite(out_file, frm)  # 如果图片存在 会重新write?
-            print(f'{out_file= }')
-            # print('out_file, row[idx], row[idx+1], this_time:')
-            # print(out_file, row[idx], row[idx+1], this_time)
 
             if event_1in4 == 'bg':
-                this_time += frm2frm * 10
-                                      #   跳过10帧,  10是调参得到的?
+                this_time += frm2frm * 10  #  跳过10帧,  10是调参得到的?
             else:
                 this_time += frm2frm
-
 
 for split in splits2vdoIds:
     vdo_idS = splits2vdoIds[split]
     for vdo_id in vdo_idS:
-        vdo2img(vdo_id, split)
-
-print('pre processing:  done')
-
-
-# 后续的放到train.zsh里了:
+        vdo2img(vdo_id, split)    #
