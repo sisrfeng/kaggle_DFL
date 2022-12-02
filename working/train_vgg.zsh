@@ -1,4 +1,4 @@
-exp_PATH=vgg__$(date +"%-d号%H点")
+exp_PATH=vgg__no_pretrained_$(date +"%-d号%H点")
 echo ${exp_PATH}
 # t可以改成rm , 我这里的t是扔进垃圾桶的意思, 避免旧实验干扰
 t exp/${exp_PATH}
@@ -7,7 +7,7 @@ t exp/${exp_PATH}
 # p train_timm.py   ../work/imgs4train         \
 p train_timm.py   ../work/imgs4train_frmAStime         \
     --amp                                  \
-    --pretrained                           \
+    `# --pretrained`                           \
     --num_classes   4                      \
     --model         vgg19                  \
     --epochs        100                    \

@@ -139,7 +139,7 @@ def extract_training_images(args):
             if start_or_end == 'end':
                 event_1in4 = 'bg'
 
-        P_img = f"../work/train_val__9frm_as_3frm/{split}/{event_1in4}"
+        P_img = f"../work/train_val__9C_as_3C/{split}/{event_1in4}"
         # P_img = f"../work/imgs4train_frmAStime/{split}/{event_1in4}"
         # P_img = f"../work/split_images/{split}/{event_1in4}"
 

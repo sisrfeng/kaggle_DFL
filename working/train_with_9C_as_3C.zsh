@@ -1,11 +1,11 @@
-exp_PATH=batchSize8__Correct_label___ori_input_size__Mixup0.7__$(date +"%-d号%H点")
+exp_PATH=train_with_9C_as_3C__$(date +"%-d号%H点")
 echo ${exp_PATH}
 # t可以改成rm , 我这里的t是扔进垃圾桶的意思, 避免旧实验干扰
 t exp/${exp_PATH}
 
 # p是改成python就行 (我把p设成了python和一些智能化的操作alias)
 # p train_timm.py   ../work/imgs4train         \
-p train_timm.py   ../work/imgs4train_frmAStime         \
+p train_timm.py   ../work/train_val__9C_as_3C         \
     --amp                                  \
     --pretrained                           \
     --num_classes   4                      \
@@ -15,7 +15,7 @@ p train_timm.py   ../work/imgs4train_frmAStime         \
     --batch_size    8                      \
     --which_metric  event_AP               \
     --bce_loss                             \
-    --mixup         0.7                    \
+    --mixup         0.5                    \
     --output        ./exp                  \
     --experiment    $exp_PATH
 
