@@ -1,3 +1,6 @@
+For https://www.kaggle.com/competitions/dfl-bundesliga-data-shootout/discussion/368599
+---
+
 This folder mimics "/kaggle"  in kaggle kernel.   
 (The repo's name in gitee is `s_kaggle`, and `s` in `s_kaggle` means "slash" ) 
 
